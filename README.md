@@ -41,7 +41,14 @@ robotic-kg-system/
 
 环境要求
 - Python 3.8+
-- pip包管理器
+- Flask==2.3.3
+- requests==2.31.0
+- jieba==0.42.1
+- networkx==3.1
+- numpy==1.24.3  
+- pyecharts==2.0.3
+- flask-cors==4.0.0
+- matplotlib==3.7.3
 - 科大讯飞Spark API账户
 
 安装步骤
