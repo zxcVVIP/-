@@ -1,0 +1,97 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+.navbar {
+    border-radius: 0 0 10px 10px;
+}
+
+#knowledgeGraph {
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    background-color: white;
+    padding: 10px;
+}
+
+#chatHistory .message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.user-message {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.ai-message {
+    background-color: #f3e5f5;
+    border-left: 4px solid #9c27b0;
+}
+
+.entity-badge {
+    display: inline-block;
+    margin: 2px;
+    padding: 4px 8px;
+    background-color: #4caf50;
+    color: white;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.triple-item {
+    padding: 8px;
+    margin: 5px 0;
+    background-color: #fff8e1;
+    border-radius: 4px;
+    border-left: 3px solid #ff9800;
+    font-size: 0.9em;
+}
+
+.stats-item {
+    margin: 5px 0;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+#loadingSpinner {
+    padding: 50px 0;
+}
+
+.example-question {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.example-question:hover {
+    background-color: #f8f9fa;
+}
+
+.btn {
+    border-radius: 5px;
+}
+
+.form-control, .form-select {
+    border-radius: 5px;
+}
+
+#graphContainer {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

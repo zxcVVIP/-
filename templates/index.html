@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机械臂智能问答系统 - 科大讯飞Spark API</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        /* 机械臂主题变量 */
+        :root {
+            --primary-blue: #2d5be3;
+            --secondary-blue: #4a7dff;
+            --robotic-blue: #3a6bc7;
+            --neon-blue: #00d4ff;
+            --metal-gray: #4a5568;
+            --dark-bg: #0f172a;
+            --darker-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --tech-gradient: linear-gradient(135deg, #2d5be3 0%, #00d4ff 100%);
+            --robotic-gradient: linear-gradient(135deg, #2d5be3 0%, #3a6bc7 50%, #1e3a8a 100%);
+            --card-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+            --neon-glow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        /* 全局样式 */
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* 机械臂背景装饰 */
+        .robotic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(45, 91, 227, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 20%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            padding: 15px 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: var(--tech-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .navbar-text {
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        /* 功能菜单栏 */
+        .function-menu-bar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin: 20px auto;
+            padding: 0;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            overflow: hidden;
+            max-width: 1400px;
+        }
+
+        .menu-tabs {
+            display: flex;
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .menu-tab {
+            flex: 1;
+            text-align: center;
+            padding: 18px 30px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            color: #94a3b8;
+            border: none;
+            background: transparent;
+        }
+
+        .menu-tab.active {
+            color: white;
+            background: var(--robotic-gradient);
+        }
+
+        .menu-tab.active::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--neon-blue);
+            box-shadow: var(--neon-glow);
+        }
+
+        .menu-tab:not(.active):hover {
+            background: rgba(45, 91, 227, 0.1);
+            color: #cbd5e1;
+        }
+
+        .menu-tab-icon {
+            display: block;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        /* 功能描述区域 - 优化为更紧凑 */
+        .function-description {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .function-panel {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .function-panel.active {
+            display: block;
+        }
+
+        /* 智能助手面板 - 紧凑布局 */
+        .ai-assistant-panel {
+            text-align: center;
+        }
+
+        .ai-illustration {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 30px;
+        }
+
+        .robot-icon {
+            font-size: 4rem;
+            color: var(--secondary-blue);
+            filter: drop-shadow(0 0 20px rgba(45, 91, 227, 0.5));
+            flex-shrink: 0;
+        }
+
+        .ai-description {
+            flex: 1;
+            text-align: left;
+        }
+
+        .ai-features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px solid rgba(74, 125, 255, 0.2);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), var(--card-glow);
+            border-color: rgba(74, 125, 255, 0.4);
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            background: var(--tech-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .feature-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .feature-desc {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        /* 图谱生成面板 - 紧凑布局 */
+        .kg-panel {
+            text-align: center;
+        }
+
+        .graph-illustration {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 30px;
+        }
+
+        .graph-visual {
+            width: 180px;
+            height: 150px;
+            flex-shrink: 0;
+            position: relative;
+            background: linear-gradient(135deg, rgba(45, 91, 227, 0.1), rgba(0, 212, 255, 0.1));
+            border-radius: 12px;
+            border: 1px solid rgba(74, 125, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .graph-node {
+            width: 16px;
+            height: 16px;
+            background: var(--primary-blue);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 10px var(--primary-blue);
+        }
+
+        .node-1 { top: 30%; left: 30%; animation: pulse 2s infinite; }
+        .node-2 { top: 30%; right: 30%; animation: pulse 2s infinite 0.5s; }
+        .node-3 { bottom: 30%; left: 30%; animation: pulse 2s infinite 1s; }
+        .node-4 { bottom: 30%; right: 30%; animation: pulse 2s infinite 1.5s; }
+        .node-5 { top: 50%; left: 50%; transform: translate(-50%, -50%);
+                 background: var(--neon-blue); animation: pulse 1.5s infinite; }
+
+        /* 开始按钮 */
+        .start-button {
+            background: var(--robotic-gradient);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(45, 91, 227, 0.3);
+            margin-top: 15px;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(45, 91, 227, 0.5), var(--neon-glow);
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 卡片美化 */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(74, 125, 255, 0.2);
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            margin-bottom: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), var(--card-glow);
+            border-color: rgba(74, 125, 255, 0.4);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 14px 14px 0 0 !important;
+            font-size: 1rem;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        /* 卡片头部 */
+        .card-header.bg-primary {
+            background: var(--robotic-gradient) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header.bg-info {
+            background: linear-gradient(90deg, #0ea5e9, #3b82f6) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header.bg-success {
+            background: linear-gradient(90deg, #10b981, #34d399) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header.bg-secondary {
+            background: linear-gradient(90deg, #64748b, #94a3b8) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header.bg-dark {
+            background: linear-gradient(90deg, #1e293b, #334155) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header.bg-warning {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #1e293b !important;
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 10px 18px;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.95rem;
+        }
+
+        .btn-success {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(90deg, #0da271, #2bb884);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary-blue), #3b82f6);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            color: #1e293b;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(90deg, #d97706, #f59e0b);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(245, 158, 11, 0.4);
+            color: #1e293b;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-blue);
+            color: var(--primary-blue);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #64748b;
+            color: #64748b;
+            background: transparent;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #64748b;
+            color: white;
+            border-color: #64748b;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid rgba(74, 125, 255, 0.2);
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.7);
+            color: #e2e8f0;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(45, 91, 227, 0.25);
+            background: rgba(15, 23, 42, 0.9);
+            color: #e2e8f0;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .input-group-text {
+            background-color: rgba(15, 23, 42, 0.7);
+            border: 2px solid rgba(74, 125, 255, 0.2);
+            color: #94a3b8;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        #graphContainer {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 41, 59, 0.7) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed rgba(74, 125, 255, 0.3);
+        }
+
+        #knowledgeGraph {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(30, 144, 255, 0.2);
+            max-height: 350px;
+            width: auto;
+            max-width: 100%;
+        }
+
+        #chatHistory {
+            background-color: rgba(15, 23, 42, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+        }
+
+        .message-bubble {
+            background: linear-gradient(90deg, rgba(45, 91, 227, 0.1), rgba(74, 125, 255, 0.1));
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--primary-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .message-bubble.user {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1));
+            border-left-color: #10b981;
+        }
+
+        #entitiesList, #triplesList {
+            background-color: rgba(15, 23, 42, 0.7);
+            border-radius: 10px;
+            padding: 12px;
+            height: 160px;
+            overflow-y: auto;
+        }
+
+        .entity-item, .triple-item {
+            background: rgba(30, 41, 59, 0.9);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-blue);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .entity-item:hover, .triple-item:hover {
+            transform: translateX(3px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            border-left-color: var(--neon-blue);
+        }
+
+        /* 实体和关系网格布局 */
+        .entities-triples-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .list-group-item {
+            background: rgba(15, 23, 42, 0.7) !important;
+            border: 1px solid rgba(74, 125, 255, 0.2) !important;
+            color: #94a3b8 !important;
+            border-radius: 6px !important;
+            margin-bottom: 6px !important;
+            padding: 10px 12px !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            font-size: 0.9rem !important;
+        }
+
+        .list-group-item:hover {
+            background: rgba(45, 91, 227, 0.1) !important;
+            color: #e2e8f0 !important;
+            border-color: var(--primary-blue) !important;
+            transform: translateX(3px) !important;
+        }
+
+        #statsContent {
+            color: #94a3b8;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(74, 125, 255, 0.2);
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--neon-blue);
+        }
+
+        /* 页脚 */
+        footer {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            border-top: 1px solid rgba(74, 125, 255, 0.2);
+            font-size: 0.9rem;
+        }
+
+        /* 模态框 */
+        .modal-content {
+            border-radius: 14px;
+            overflow: hidden;
+            border: none;
+            background: var(--darker-bg);
+            color: #e2e8f0;
+        }
+
+        .modal-header {
+            background: var(--robotic-gradient);
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(74, 125, 255, 0.2);
+        }
+
+        /* 加载动画 */
+        #loadingSpinner {
+            color: var(--neon-blue);
+        }
+
+        .spinner-border {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-width: 0.2em;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .function-menu-bar {
+                margin: 15px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .ai-features {
+                grid-template-columns: 1fr;
+            }
+
+            .ai-illustration, .graph-illustration {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .ai-description {
+                text-align: center;
+            }
+
+            .menu-tabs {
+                flex-direction: column;
+            }
+
+            .function-description {
+                padding: 15px;
+            }
+
+            .entities-triples-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                border-radius: 10px;
+            }
+
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.9rem;
+            }
+
+            #graphContainer {
+                min-height: 250px;
+                padding: 15px;
+            }
+
+            .card-header {
+                padding: 14px 16px;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .function-menu-bar {
+                margin: 10px;
+                border-radius: 12px;
+            }
+
+            .menu-tab {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+
+            .menu-tab-icon {
+                font-size: 1.5rem;
+                margin-bottom: 5px;
+            }
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(var(--primary-blue), var(--neon-blue));
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(var(--neon-blue), var(--primary-blue));
+        }
+
+        /* 表单复选框 */
+        .form-check-input:checked {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        .form-check-input:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.15rem rgba(45, 91, 227, 0.25);
+        }
+
+        /* 徽章 */
+        .badge {
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .bg-primary {
+            background: linear-gradient(90deg, var(--primary-blue), #3b82f6) !important;
+        }
+
+        .bg-success {
+            background: linear-gradient(90deg, #10b981, #34d399) !important;
+        }
+
+        .bg-warning {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+            color: #1e293b;
+        }
+
+        .bg-info {
+            background: linear-gradient(90deg, #0ea5e9, #3b82f6) !important;
+        }
+
+        /* 间距调整 */
+        .mb-3 {
+            margin-bottom: 1rem !important;
+        }
+
+        .mt-3 {
+            margin-top: 1rem !important;
+        }
+
+        .d-grid.gap-2 {
+            gap: 0.75rem !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 机械臂背景 -->
+    <div class="robotic-bg"></div>
+
+    <div class="container-fluid px-3 px-md-4">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-dark mb-3">
+            <div class="container-fluid px-0">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-cpu"></i> 机械臂智能问答系统
+                </a>
+                <div class="navbar-text d-none d-md-block">
+                    基于科大讯飞Spark API
+                </div>
+            </div>
+        </nav>
+
+        <!-- 功能菜单栏 -->
+        <div class="function-menu-bar">
+            <div class="menu-tabs">
+                <button class="menu-tab active" data-target="ai-assistant">
+                    <div class="menu-tab-icon">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    智能助手
+                    <div class="mt-1" style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">
+                        对话式AI交互引擎
+                    </div>
+                </button>
+                <button class="menu-tab" data-target="kg-generator">
+                    <div class="menu-tab-icon">
+                        <i class="bi bi-diagram-3"></i>
+                    </div>
+                    图谱生成
+                    <div class="mt-1" style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">
+                        动态知识图谱构建
+                    </div>
+                </button>
+            </div>
+
+            <div class="function-description">
+                <!-- 智能助手面板 -->
+                <div class="function-panel active" id="ai-assistant">
+                    <div class="ai-assistant-panel">
+                        <div class="ai-illustration">
+                            <div class="robot-icon">
+                                <i class="bi bi-cpu-fill"></i>
+                            </div>
+                            <div class="ai-description">
+                                <h4 class="mb-2">机械臂智能助手</h4>
+                                <p class="text-muted mb-3" style="font-size: 0.9rem;">融合科大讯飞Spark API的先进对话引擎，支持多轮对话、智能推理与精准意图识别。</p>
+                            </div>
+                        </div>
+
+                        <div class="ai-features">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-chat-dots"></i>
+                                </div>
+                                <div class="feature-title">多轮对话引擎</div>
+                                <div class="feature-desc">
+                                    基于科大讯飞Spark API构建，支持上下文记忆和连续对话。
+                                </div>
+                            </div>
+
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-lightbulb"></i>
+                                </div>
+                                <div class="feature-title">智能推理能力</div>
+                                <div class="feature-desc">
+                                    结合知识图谱技术，具备逻辑推理和复杂问题求解能力。
+                                </div>
+                            </div>
+
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-translate"></i>
+                                </div>
+                                <div class="feature-title">多语言支持</div>
+                                <div class="feature-desc">
+                                    支持中英文混合输入，自动识别语言并切换响应模式。
+                                </div>
+                            </div>
+
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-gear"></i>
+                                </div>
+                                <div class="feature-title">精准意图识别</div>
+                                <div class="feature-desc">
+                                    采用深度学习模型进行用户意图分析，准确理解用户需求。
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="start-button" onclick="showStartDialogMessage()">
+                            <i class="bi bi-play-circle"></i> 开始对话
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 图谱生成面板 -->
+                <div class="function-panel" id="kg-generator">
+                    <div class="kg-panel">
+                        <div class="graph-illustration">
+                            <div class="graph-visual">
+                                <div class="graph-node node-1"></div>
+                                <div class="graph-node node-2"></div>
+                                <div class="graph-node node-3"></div>
+                                <div class="graph-node node-4"></div>
+                                <div class="graph-node node-5"></div>
+                            </div>
+                            <div class="ai-description">
+                                <h4 class="mb-2">动态知识图谱构建</h4>
+                                <p class="text-muted mb-3" style="font-size: 0.9rem;">实时抽取、融合与可视化知识网络，支持智能查询与交互式探索。</p>
+                            </div>
+                        </div>
+
+                        <div class="ai-features">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-lightning"></i>
+                                </div>
+                                <div class="feature-title">实时图谱构建</div>
+                                <div class="feature-desc">
+                                    从对话内容实时抽取实体和关系，动态构建和更新知识图谱。
+                                </div>
+                            </div>
+
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-bezier2"></i>
+                                </div>
+                                <div class="feature-title">多源数据融合</div>
+                                <div class="feature-desc">
+                                    支持结构化与非结构化数据的知识抽取与融合。
+                                </div>
+                            </div>
+
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <div class="feature-title">智能图谱查询</div>
+                                <div class="feature-desc">
+                                    提供自然语言到图谱查询语言的转换，支持复杂路径查询。
+                                </div>
+                            </div>
+
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="bi bi-eye"></i>
+                                </div>
+                                <div class="feature-title">可视化探索</div>
+                                <div class="feature-desc">
+                                    提供交互式图谱可视化界面，支持缩放、旋转、过滤等操作。
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="start-button" onclick="showStartKGenMessage()">
+                            <i class="bi bi-play-circle"></i> 开始图谱构建
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域-->
+        <div class="main-content">
+            <!-- 左侧控制面板 -->
+            <div class="left-panel">
+                <!-- API配置 -->
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex align-items-center">
+                        <i class="bi bi-key me-2"></i>
+                        <span>API配置</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="apiKey" class="form-label small">API Key</label>
+                            <input type="password" class="form-control form-control-sm" id="apiKey"
+                                   placeholder="请输入API Key" value="57a03a3d5d81a47ec80b2796d1aaf056">
+                        </div>
+                        <div class="mb-3">
+                            <label for="apiSecret" class="form-label small">API Secret</label>
+                            <input type="password" class="form-control form-control-sm" id="apiSecret"
+                                   placeholder="请输入API Secret" value="YzAzNjA0YmIzMTZmNzliNGIzOWE2NTBi">
+                        </div>
+                        <button class="btn btn-success w-100 btn-sm" onclick="testConnection()">
+                            <i class="bi bi-plug"></i> 测试连接
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 会话管理 -->
+                <div class="card">
+                    <div class="card-header bg-info text-white d-flex align-items-center">
+                        <i class="bi bi-chat me-2"></i>
+                        <span>会话管理</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small">当前会话ID</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="sessionId" readonly>
+                                <button class="btn btn-outline-secondary" onclick="copySessionId()">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm" onclick="newSession()">
+                                <i class="bi bi-plus-circle"></i> 新建会话
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="clearSession()">
+                                <i class="bi bi-trash"></i> 清空当前会话
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提问区域 -->
+                <div class="card">
+                    <div class="card-header bg-success text-white d-flex align-items-center">
+                        <i class="bi bi-question-circle me-2"></i>
+                        <span>提问</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="questionInput" class="form-label small">输入您的问题</label>
+                            <textarea class="form-control form-control-sm" id="questionInput" rows="2"
+                                      placeholder="请输入您的问题，例如：什么是人工智能？"></textarea>
+                        </div>
+                        <div class="mb-3 form-check form-check-inline">
+                            <input type="checkbox" class="form-check-input" id="visualizeGraph" checked>
+                            <label class="form-check-label small" for="visualizeGraph">显示知识图谱</label>
+                        </div>
+                        <button class="btn btn-success w-100 btn-sm mb-3" onclick="askQuestion()" id="askButton">
+                            <i class="bi bi-send"></i> 发送问题
+                        </button>
+
+                        <!-- 示例问题 -->
+                        <div>
+                            <small class="text-muted">示例问题：</small>
+                            <div id="exampleQuestions" class="mt-2">
+                                <!-- 示例问题将通过JS加载 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 统计信息 -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white d-flex align-items-center">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        <span>统计信息</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="statsContent">
+                            <p class="text-muted small mb-0">暂无数据</p>
+                        </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="exportData('json')">
+                                <i class="bi bi-download"></i> 导出JSON
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="exportData('csv')">
+                                <i class="bi bi-filetype-csv"></i> 导出CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="right-panel">
+                <!-- 图谱展示区域 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-dark text-white d-flex align-items-center">
+                        <i class="bi bi-diagram-3 me-2"></i>
+                        <span>知识图谱可视化</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="graphContainer" class="text-center">
+                            <div id="loadingSpinner" class="d-none">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
+                                <p class="mt-2 small">正在生成知识图谱...</p>
+                            </div>
+                            <img id="knowledgeGraph" class="img-fluid"
+                                 style="max-height: 300px; display: none;">
+                            <div id="noGraph" class="text-muted">
+                                <i class="bi bi-diagram-3" style="font-size: 2.5rem;"></i>
+                                <p class="mt-2 small">暂无知识图谱，请先提问</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 对话历史 -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="bi bi-chat-left-text me-2"></i>
+                            <span>对话历史</span>
+                        </div>
+                        <small class="opacity-75" id="historyCount">0 条消息</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="chatHistory">
+                            <div class="text-muted text-center p-4">
+                                <i class="bi bi-chat" style="font-size: 1.5rem;"></i>
+                                <p class="mt-2 mb-0 small">暂无对话历史</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实体和关系网格 -->
+                <div class="entities-triples-grid">
+                    <!-- 实体列表 -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-tags me-2"></i>
+                                <span>实体列表</span>
+                            </div>
+                            <small class="opacity-75" id="entitiesCount">0</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="entitiesList">
+                                <p class="text-muted text-center p-3 small">暂无实体</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 关系三元组 -->
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-link me-2"></i>
+                                <span>关系三元组</span>
+                            </div>
+                            <small class="opacity-75" id="triplesCount">0</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="triplesList">
+                                <p class="text-muted text-center p-3 small">暂无关系</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="mt-4 py-3 text-center">
+            <p class="mb-1">© 2024 机械臂智能问答系统 | 基于科大讯飞Spark API</p>
+            <small class="text-muted">智能对话 · 知识图谱 · 人工智能</small>
+        </footer>
+    </div>
+
+    <!-- 消息提示模态框 -->
+    <div class="modal fade" id="messageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">消息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalMessage">
+                    ...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 前端JavaScript代码 -->
+    <script>
+        // 全局变量
+        let currentSessionId = null;
+        let apiKey = '';
+        let apiSecret = '';
+
+        // DOM加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化会话
+            newSession();
+
+            // 加载示例问题
+            loadExampleQuestions();
+
+            // 设置API密钥
+            apiKey = document.getElementById('apiKey').value;
+            apiSecret = document.getElementById('apiSecret').value;
+
+            // 绑定回车键发送
+            document.getElementById('questionInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    askQuestion();
+                }
+            });
+
+            // 菜单切换功能
+            initMenuTabs();
+        });
+
+        // 初始化菜单切换
+        function initMenuTabs() {
+            const tabs = document.querySelectorAll('.menu-tab');
+            const panels = document.querySelectorAll('.function-panel');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+
+                    // 更新活跃标签
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // 更新活跃面板
+                    panels.forEach(panel => {
+                        panel.classList.remove('active');
+                        if (panel.id === targetId) {
+                            panel.classList.add('active');
+                        }
+                    });
+                });
+            });
+        }
+
+        // 开始对话按钮消息显示
+        function showStartDialogMessage() {
+            showMessage('功能提示', '智能对话功能已就绪！您可以在下方的提问区域输入问题开始对话。系统将结合科大讯飞Spark API与知识图谱技术为您提供智能回答。');
+        }
+
+        // 开始图谱构建按钮消息显示
+        function showStartKGenMessage() {
+            showMessage('功能提示', '知识图谱构建引擎已准备就绪！当您在提问区域发送问题时，系统将自动从对话内容中提取实体和关系，构建动态知识图谱并实时可视化。');
+        }
+
+        // 测试API连接
+        async function testConnection() {
+            apiKey = document.getElementById('apiKey').value;
+            apiSecret = document.getElementById('apiSecret').value;
+
+            if (!apiKey || !apiSecret) {
+                showMessage('错误', '请填写API Key和Secret');
+                return;
+            }
+
+            const button = document.querySelector('button[onclick="testConnection()"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> 测试中...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/api/test_connection', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({api_key: apiKey, api_secret: apiSecret})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('成功', 'API连接测试成功！');
+                } else {
+                    showMessage('错误', '连接失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                showMessage('错误', '请求失败: ' + error.message);
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // 创建新会话
+        async function newSession() {
+            try {
+                const response = await fetch('/api/new_session');
+                const data = await response.json();
+
+                if (data.success) {
+                    currentSessionId = data.session_id;
+                    document.getElementById('sessionId').value = currentSessionId;
+                    clearAllDisplays();
+                    showMessage('成功', '已创建新会话');
+                }
+            } catch (error) {
+                showMessage('错误', '创建会话失败: ' + error.message);
+            }
+        }
+
+        // 提问
+        async function askQuestion() {
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) {
+                showMessage('提示', '请输入问题');
+                return;
+            }
+
+            if (!currentSessionId) {
+                await newSession();
+            }
+
+            const visualize = document.getElementById('visualizeGraph').checked;
+            const askButton = document.getElementById('askButton');
+            const originalText = askButton.innerHTML;
+
+            askButton.innerHTML = '<i class="bi bi-hourglass-split"></i> 处理中...';
+            askButton.disabled = true;
+
+            // 显示加载中
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+            document.getElementById('knowledgeGraph').style.display = 'none';
+            document.getElementById('noGraph').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        question: question,
+                        session_id: currentSessionId,
+                        visualize: visualize
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 更新界面
+                    updateDisplay(data);
+                    // 清空输入框
+                    document.getElementById('questionInput').value = '';
+                } else {
+                    showMessage('错误', data.error || '请求失败');
+                }
+            } catch (error) {
+                showMessage('错误', '请求失败: ' + error.message);
+            } finally {
+                askButton.innerHTML = originalText;
+                askButton.disabled = false;
+                document.getElementById('loadingSpinner').classList.add('d-none');
+            }
+        }
+
+        // 更新显示
+        function updateDisplay(data) {
+            // 显示知识图谱
+            if (data.graph_image) {
+                const graphImg = document.getElementById('knowledgeGraph');
+                graphImg.src = data.graph_image;
+                graphImg.style.display = 'block';
+                document.getElementById('noGraph').style.display = 'none';
+            }
+
+            // 添加对话历史
+            addToChatHistory(data.question, data.answer);
+
+            // 显示实体
+            displayEntities(data.extraction?.entities || []);
+
+            // 显示三元组
+            displayTriples(data.new_triples || []);
+
+            // 更新统计信息
+            updateStats(data.graph_stats || {total_entities: 0, total_triples: 0});
+
+            // 更新计数显示
+            updateCounts(data);
+        }
+
+        // 添加对话历史
+        function addToChatHistory(question, answer) {
+            const chatHistory = document.getElementById('chatHistory');
+
+            // 如果显示"暂无对话历史"，先清除
+            if (chatHistory.children.length === 1 && chatHistory.children[0].classList.contains('text-muted')) {
+                chatHistory.innerHTML = '';
+            }
+
+            // 添加用户消息
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message-bubble user';
+            userMessage.innerHTML = `<strong>用户：</strong>${escapeHtml(question)}<br><small class="text-muted">${new Date().toLocaleTimeString()}</small>`;
+
+            // 添加AI消息
+            const aiMessage = document.createElement('div');
+            aiMessage.className = 'message-bubble';
+            aiMessage.innerHTML = `<strong>系统：</strong>${escapeHtml(answer)}<br><small class="text-muted">${new Date().toLocaleTimeString()}</small>`;
+
+            chatHistory.appendChild(userMessage);
+            chatHistory.appendChild(aiMessage);
+
+            // 滚动到底部
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // 显示实体
+        function displayEntities(entities) {
+            const container = document.getElementById('entitiesList');
+
+            if (entities.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center p-3 small">暂无实体</p>';
+                return;
+            }
+
+            let html = '';
+            entities.forEach(entity => {
+                html += `<div class="entity-item"><strong>${escapeHtml(entity)}</strong></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // 显示三元组
+        function displayTriples(triples) {
+            const container = document.getElementById('triplesList');
+
+            if (triples.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center p-3 small">暂无关系</p>';
+                return;
+            }
+
+            let html = '';
+            triples.forEach((triple, index) => {
+                html += `
+                    <div class="triple-item">
+                        <strong>${escapeHtml(triple.subject)}</strong>
+                        <span class="badge bg-primary mx-1">${escapeHtml(triple.predicate)}</span>
+                        <strong>${escapeHtml(triple.object)}</strong>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // 更新统计信息
+        function updateStats(stats) {
+            const container = document.getElementById('statsContent');
+            container.innerHTML = `
+                <div class="stat-item">
+                    <span>实体总数</span>
+                    <span class="stat-value">${stats.total_entities || 0}</span>
+                </div>
+                <div class="stat-item">
+                    <span>关系总数</span>
+                    <span class="stat-value">${stats.total_triples || 0}</span>
+                </div>
+                <div class="stat-item">
+                    <span>对话轮次</span>
+                    <span class="stat-value">${stats.total_history || 0}</span>
+                </div>
+            `;
+        }
+
+        // 更新计数显示
+        function updateCounts(data) {
+            // 对话历史计数
+            const chatHistory = document.getElementById('chatHistory');
+            const messageCount = chatHistory.querySelectorAll('.message-bubble').length;
+            document.getElementById('historyCount').textContent = `${messageCount} 条消息`;
+
+            // 实体计数
+            const entitiesCount = data.extraction?.entities?.length || 0;
+            document.getElementById('entitiesCount').textContent = entitiesCount;
+
+            // 三元组计数
+            const triplesCount = data.new_triples?.length || 0;
+            document.getElementById('triplesCount').textContent = triplesCount;
+        }
+
+        // 清空会话
+        async function clearSession() {
+            if (!currentSessionId) {
+                showMessage('提示', '没有活动的会话');
+                return;
+            }
+
+            if (!confirm('确定要清空当前会话的所有数据吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/clear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: currentSessionId})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    clearAllDisplays();
+                    showMessage('成功', '会话已清空');
+                }
+            } catch (error) {
+                showMessage('错误', '清空会话失败: ' + error.message);
+            }
+        }
+
+        // 清空所有显示
+        function clearAllDisplays() {
+            document.getElementById('knowledgeGraph').style.display = 'none';
+            document.getElementById('noGraph').style.display = 'block';
+            document.getElementById('chatHistory').innerHTML =
+                '<div class="text-muted text-center p-4"><i class="bi bi-chat" style="font-size: 1.5rem;"></i><p class="mt-2 mb-0 small">暂无对话历史</p></div>';
+            document.getElementById('entitiesList').innerHTML =
+                '<p class="text-muted text-center p-3 small">暂无实体</p>';
+            document.getElementById('triplesList').innerHTML =
+                '<p class="text-muted text-center p-3 small">暂无关系</p>';
+            document.getElementById('statsContent').innerHTML =
+                '<p class="text-muted small mb-0">暂无数据</p>';
+
+            // 重置计数
+            document.getElementById('historyCount').textContent = '0 条消息';
+            document.getElementById('entitiesCount').textContent = '0';
+            document.getElementById('triplesCount').textContent = '0';
+        }
+
+        // 导出数据
+        async function exportData(format) {
+            if (!currentSessionId) {
+                showMessage('提示', '没有要导出的数据');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/export?session_id=${currentSessionId}&format=${format}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    if (format === 'json') {
+                        downloadJson(data.data, `knowledge_graph_${currentSessionId}.json`);
+                    } else if (format === 'csv') {
+                        downloadCsv(data.data, `knowledge_graph_${currentSessionId}.csv`);
+                    }
+                    showMessage('成功', '数据导出成功');
+                } else {
+                    showMessage('错误', data.error || '导出失败');
+                }
+            } catch (error) {
+                showMessage('错误', '导出失败: ' + error.message);
+            }
+        }
+
+        // 下载JSON文件
+        function downloadJson(data, filename) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 下载CSV文件
+        function downloadCsv(data, filename) {
+            const blob = new Blob([data], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 复制会话ID
+        function copySessionId() {
+            const sessionIdInput = document.getElementById('sessionId');
+            sessionIdInput.select();
+            sessionIdInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(sessionIdInput.value);
+            showMessage('提示', '会话ID已复制到剪贴板');
+        }
+
+        // 加载示例问题
+        async function loadExampleQuestions() {
+            try {
+                const response = await fetch('/api/example_questions');
+                const data = await response.json();
+
+                if (data.success) {
+                    const container = document.getElementById('exampleQuestions');
+                    container.innerHTML = '';
+
+                    data.examples.slice(0, 3).forEach(question => {
+                        const div = document.createElement('div');
+                        div.className = 'list-group-item';
+                        div.textContent = question;
+                        div.onclick = () => {
+                            document.getElementById('questionInput').value = question;
+                            document.getElementById('questionInput').focus();
+                        };
+                        container.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error('加载示例问题失败:', error);
+                // 使用默认示例问题
+                const container = document.getElementById('exampleQuestions');
+                const examples = [
+                    '什么是人工智能？',
+                    '机器学习有哪些主要类型？',
+                    '介绍一下量子计算'
+                ];
+
+                examples.forEach(question => {
+                    const div = document.createElement('div');
+                    div.className = 'list-group-item';
+                    div.textContent = question;
+                    div.onclick = () => {
+                        document.getElementById('questionInput').value = question;
+                        document.getElementById('questionInput').focus();
+                    };
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        // 显示消息模态框
+        function showMessage(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
